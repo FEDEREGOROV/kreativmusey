@@ -20,6 +20,17 @@ function currentIsoTime() {
   return new Date().toISOString()
 }
 
+function createClientId() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'))
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`
+}
+
 function Mascot({ state }: { state: MascotState }) {
   return (
     <div className={`mascot mascot--${state}`} aria-hidden="true">
@@ -153,7 +164,7 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
     setError('')
     setMascotState('thinking')
     const optimistic: ChatMessage = {
-      id: `local-${crypto.randomUUID()}`,
+      id: `local-${createClientId()}`,
       sequence: Number.MAX_SAFE_INTEGER,
       role: 'user',
       text,
@@ -165,7 +176,7 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
     }
     setMessages((current) => [...current, optimistic])
     try {
-      const clientId = crypto.randomUUID()
+      const clientId = createClientId()
       const accepted = await api<{ request_id: string }>(`/api/v1/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: { 'Idempotency-Key': clientId },
