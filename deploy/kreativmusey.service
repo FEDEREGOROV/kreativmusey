@@ -1,0 +1,24 @@
+[Unit]
+Description=Creative Museum assistant API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kreativmusey
+Group=kreativmusey
+WorkingDirectory=/opt/kreativmusey/current/apps/api
+EnvironmentFile=/etc/kreativmusey.env
+ExecStart=/opt/kreativmusey/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 1
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+UMask=0027
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/kreativmusey/current/apps/api
+
+[Install]
+WantedBy=multi-user.target
