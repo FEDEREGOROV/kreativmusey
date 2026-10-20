@@ -1,0 +1,20 @@
+{
+  "uploaded_on": "2026-10-20",
+  "season_status": "legacy_dates_require_review",
+  "sources": [
+    {
+      "role": "priority_question_answer",
+      "copied_as": "qa_source.txt",
+      "size_bytes": 267404,
+      "sha256": "d3a6d2da4a833c9df419b25724696ed8b89dcad6226eab53fb9ff967998d6481",
+      "source_content_edited": false
+    },
+    {
+      "role": "general_knowledge_fallback",
+      "copied_as": "general_source.txt",
+      "size_bytes": 193874,
+      "sha256": "68f2923a5734bdfcbfc9bca1828352f8fe0e726ab79c515237c099d9fdf6a94b",
+      "source_content_edited": false
+    }
+  ]
+}

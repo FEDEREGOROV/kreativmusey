@@ -1,0 +1,10 @@
+{
+  "folders": [
+    { "path": "." }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/apps/api/.venv/bin/python",
+    "editor.formatOnSave": true,
+    "typescript.tsdk": "apps/web/node_modules/typescript/lib"
+  }
+}

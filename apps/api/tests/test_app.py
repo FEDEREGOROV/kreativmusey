@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@pytest.fixture
+def client():
+    with TestClient(app) as test_client:
+        yield test_client
+
+
+def test_health_and_public_config(client: TestClient):
+    health = client.get("/health/ready")
+    config = client.get("/api/v1/public/config")
+
+    assert health.status_code == 200
+    assert health.json()["knowledge"] == "ready"
+    assert config.status_code == 200
+    assert config.json()["demo"] is True
+
+
+def test_session_chat_and_history(client: TestClient):
+    session = client.get("/api/v1/session")
+    conversation_id = session.json()["conversation_id"]
+    client_message_id = str(uuid.uuid4())
+
+    accepted = client.post(
+        f"/api/v1/conversations/{conversation_id}/messages",
+        headers={"Idempotency-Key": client_message_id},
+        json={"question": "unused", "text": "Кто может участвовать?", "client_message_id": client_message_id},
+    )
+    status = client.get(f"/api/v1/chat-requests/{accepted.json()['request_id']}")
+    history = client.get(f"/api/v1/conversations/{conversation_id}/messages")
+
+    assert accepted.status_code == 202
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    assert status.json()["assistant_message"]["sources"]
+    assert len(history.json()["items"]) >= 2
+
+
+def test_admin_login_usage_and_faqs(client: TestClient):
+    login = client.post(
+        "/api/v1/admin/auth/login",
+        json={"username": "admin", "password": "konkursadmin"},
+    )
+    csrf = login.json()["csrf_token"]
+    usage = client.get("/api/v1/admin/usage/summary")
+    faqs = client.get("/api/v1/admin/faqs")
+
+    assert login.status_code == 200
+    assert usage.status_code == 200
+    assert faqs.status_code == 200
+    assert len(faqs.json()["items"]) >= 3
+
+    created = client.post(
+        "/api/v1/admin/faqs",
+        headers={"X-CSRF-Token": csrf},
+        json={
+            "question": "Тестовый вопрос?",
+            "answer": "Тестовый ответ для проверки редактора.",
+            "category": "Тест",
+            "season": "2025-2026",
+            "featured": False,
+        },
+    )
+    assert created.status_code == 201
+
+
+def test_layered_knowledge_and_editable_escalation(client: TestClient):
+    login = client.post(
+        "/api/v1/admin/auth/login",
+        json={"username": "admin", "password": "konkursadmin"},
+    )
+    csrf = login.json()["csrf_token"]
+
+    qa = client.get("/api/v1/admin/knowledge?layer=qa")
+    general = client.get("/api/v1/admin/knowledge?layer=general")
+    general_text = client.get("/api/v1/admin/knowledge/general-text")
+    escalation = client.get("/api/v1/admin/knowledge/settings/escalation")
+
+    assert qa.status_code == 200
+    assert qa.json()["count"] > 0
+    assert qa.json()["items"][0]["title"] == "Привет, как дела"
+    assert qa.json()["items"][1]["title"].startswith("О чем конкурс")
+    assert general.status_code == 200
+    assert general.json()["count"] > 0
+    assert general_text.status_code == 200
+    assert len(general_text.json()["value"]) > 100
+    assert "creativemuseum@futuretime.ru" in escalation.json()["value"]
+
+    saved_general = client.put(
+        "/api/v1/admin/knowledge/general-text",
+        headers={"X-CSRF-Token": csrf},
+        json={
+            "value": general_text.json()["value"],
+            "expected_revision": general_text.json()["revision"],
+        },
+    )
+    assert saved_general.status_code == 200
+    assert saved_general.json()["revision"] == general_text.json()["revision"] + 1
+    assert saved_general.json()["chunk_count"] > 0
+
+    saved = client.put(
+        "/api/v1/admin/knowledge/settings/escalation",
+        headers={"X-CSRF-Token": csrf},
+        json={
+            "value": escalation.json()["value"],
+            "expected_revision": escalation.json()["revision"],
+        },
+    )
+    assert saved.status_code == 200
+    assert saved.json()["revision"] == escalation.json()["revision"] + 1

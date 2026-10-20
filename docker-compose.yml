@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: creative_museum
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: change_me
+    ports:
+      - "5432:5432"
+    volumes:
+      - creative_museum_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d creative_museum"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  creative_museum_pgdata:

@@ -1,0 +1,10 @@
+{
+  "selected_concept": "01",
+  "name": "Чистый диалог",
+  "selected_by": "user",
+  "selected_at": "2026-10-20",
+  "reference": "selected_reference.png",
+  "reference_sha256": "3e64b00ccab98a243c53f2a610ca6d8d0363c779c41faaf69105b3f94f0222eb",
+  "production_mascot_assets_included": false,
+  "screenshot_is_not_implementation": true
+}

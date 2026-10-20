@@ -1,0 +1,24 @@
+:root {
+  font-family: Manrope, Arial, sans-serif;
+  color: #111411;
+  background: #fff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --text: #111411;
+  --text-muted: #5d655d;
+  --brand: #73b227;
+  --primary: #1d5b2a;
+  --primary-hover: #164821;
+  --surface: #f5f6f7;
+  --assistant-bubble: #ebedef;
+  --user-bubble: #e8f2dc;
+  --border: #dce1da;
+  --focus: #1d5b2a;
+  --error: #a52a2a;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; scroll-behavior: smooth; }
+body { min-width: 320px; min-height: 100%; margin: 0; background: #fff; }
+button, textarea { font: inherit; }

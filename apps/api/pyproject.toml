@@ -1,0 +1,24 @@
+[project]
+name = "creative-museum-api"
+version = "0.1.0"
+description = "Local API scaffold for the Creative Museum assistant"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.17.0,<2.0.0",
+  "fastapi>=0.119.0,<1.0.0",
+  "openai>=3.26.0,<4.0.0",
+  "pwdlib[argon2]>=0.3.0,<1.0.0",
+  "pydantic-settings>=2.11.0,<3.0.0",
+  "psycopg[binary]>=3.2.0,<4.0.0",
+  "sqlalchemy>=2.0.44,<3.0.0",
+  "uvicorn[standard]>=0.37.0,<1.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28.0,<1.0.0",
+  "pytest>=8.4.0,<9.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
