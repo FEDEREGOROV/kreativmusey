@@ -18,7 +18,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/opt/kreativmusey/current/apps/api
+ReadWritePaths=/opt/kreativmusey/data /opt/kreativmusey/current/apps/api/private_storage
 
 [Install]
 WantedBy=multi-user.target
