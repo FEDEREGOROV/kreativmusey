@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.pricing import calculate_token_cost
 
 
 @pytest.fixture
@@ -22,6 +23,12 @@ def test_health_and_public_config(client: TestClient):
     assert health.json()["knowledge"] == "ready"
     assert config.status_code == 200
     assert config.json()["demo"] is True
+
+
+def test_openai_token_pricing():
+    assert calculate_token_cost("gpt-6-luna", 1_000_000, 1_000_000, 100_000) == pytest.approx(0.591)
+    assert calculate_token_cost("text-embedding-3-small", 1_000_000) == pytest.approx(0.02)
+    assert calculate_token_cost("unknown-model", 1000, 1000) is None
 
 
 def test_session_chat_and_history(client: TestClient):
@@ -86,6 +93,9 @@ def test_admin_login_usage_and_faqs(client: TestClient):
 
     assert login.status_code == 200
     assert usage.status_code == 200
+    assert usage.json()["unknown_count"] == 0
+    assert float(usage.json()["known_cost"]) >= 0
+    assert "embedding_cost" in usage.json()
     assert faqs.status_code == 200
     assert len(faqs.json()["items"]) >= 3
 

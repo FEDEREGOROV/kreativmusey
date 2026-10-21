@@ -9,10 +9,17 @@ type UsageSummary = {
   questions: number
   successful_answers: number
   api_calls: number
+  local_operations: number
   errors: number
   input_tokens: number
   output_tokens: number
   cached_tokens: number
+  reasoning_tokens: number
+  chat_input_tokens: number
+  chat_output_tokens: number
+  embedding_input_tokens: number
+  chat_cost: string
+  embedding_cost: string
   known_cost: string
   currency: string
   unknown_count: number
@@ -118,22 +125,28 @@ function UsageTab() {
   const cards = [
     ['Вопросы', usage.questions],
     ['Успешные ответы', usage.successful_answers],
-    ['API-вызовы', usage.api_calls],
+    ['Запросы к OpenAI', usage.api_calls],
+    ['Локальные операции', usage.local_operations],
     ['Ошибки', usage.errors],
-    ['Входные токены', usage.input_tokens],
-    ['Выходные токены', usage.output_tokens],
+    ['GPT · входные токены', usage.chat_input_tokens],
+    ['GPT · выходные токены', usage.chat_output_tokens],
+    ['Кэшированный вход', usage.cached_tokens],
+    ['Reasoning в выходе', usage.reasoning_tokens],
+    ['Embeddings · входные токены', usage.embedding_input_tokens],
   ]
   return (
     <section className="panel usage-panel">
       <div className="panel-heading"><div><p className="overline">Учёт провайдера</p><h2>Расход токенов</h2></div><span className="mode-badge">{usage.demo ? 'Без расходов' : usage.model}</span></div>
       <div className="metric-grid">
         {cards.map(([label, value]) => <div className="metric" key={label}><span>{label}</span><strong>{Number(value).toLocaleString('ru-RU')}</strong></div>)}
-        <div className="metric metric--accent"><span>Известная стоимость</span><strong>${usage.known_cost}</strong></div>
-        <div className="metric"><span>Неизвестный расход</span><strong>{usage.unknown_count}</strong></div>
+        <div className="metric metric--accent"><span>Всего по тарифам OpenAI</span><strong>${usage.known_cost}</strong></div>
+        <div className="metric"><span>Ответы GPT</span><strong>${usage.chat_cost}</strong></div>
+        <div className="metric"><span>Смысловой поиск</span><strong>${usage.embedding_cost}</strong></div>
+        <div className="metric"><span>Вызовы без известного тарифа</span><strong>{usage.unknown_count}</strong></div>
       </div>
       <div className="usage-note">
-        <strong>{usage.demo ? 'Вызовы модели не выполняются' : 'Данные получены из usage API'}</strong>
-        <p>Поиск по базе знаний учитывается как нулевой расход. После подключения модели каждый вызов будет записан отдельно.</p>
+        <strong>{usage.demo ? 'Вызовы модели не выполняются' : 'Токены получены из OpenAI API'}</strong>
+        <p>Стоимость рассчитывается отдельно для GPT, кэшированного входа и embeddings. Reasoning-токены уже входят в выходные и второй раз к сумме не добавляются.</p>
       </div>
     </section>
   )

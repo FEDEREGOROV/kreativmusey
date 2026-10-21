@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .models import ApiCall, AppSetting, KnowledgeChunk, KnowledgeVersion
+from .pricing import price_api_call
 
 
 settings = get_settings()
@@ -367,16 +368,14 @@ def _cosine_similarity(left: list[float], right: list[float]) -> float:
 
 def _record_embedding_call(db: Session, request_id: str, response, started: float) -> None:
     usage = getattr(response, "usage", None)
-    db.add(ApiCall(
+    db.add(price_api_call(ApiCall(
         request_id=request_id,
         purpose="knowledge-embedding",
         model=settings.openai_embedding_model,
         input_tokens=getattr(usage, "prompt_tokens", None) or getattr(usage, "total_tokens", None),
         output_tokens=0,
-        cost_usd=None,
-        cost_status="unknown",
         duration_ms=int((time.perf_counter() - started) * 1000),
-    ))
+    )))
 
 
 def _hybrid_search(
@@ -635,7 +634,7 @@ def answer_question(
     input_details = getattr(usage, "input_tokens_details", None)
     output_details = getattr(usage, "output_tokens_details", None)
     db.add(
-        ApiCall(
+        price_api_call(ApiCall(
             request_id=request_id,
             purpose="chat",
             model=settings.openai_model,
@@ -644,10 +643,8 @@ def answer_question(
             cached_tokens=getattr(input_details, "cached_tokens", None),
             output_tokens=getattr(usage, "output_tokens", None),
             reasoning_tokens=getattr(output_details, "reasoning_tokens", None),
-            cost_usd=None,
-            cost_status="unknown",
             duration_ms=int((time.perf_counter() - started) * 1000),
-        )
+        ))
     )
     db.commit()
     return parsed, selected, version_id

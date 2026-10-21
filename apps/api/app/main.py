@@ -39,6 +39,7 @@ from .models import (
     VisitorSession,
     utcnow,
 )
+from .pricing import resolved_call_cost
 from .security import (
     authenticate_admin,
     create_admin_session,
@@ -597,18 +598,31 @@ def usage_summary(request: Request, db: Session = Depends(get_db)):
     questions = db.scalar(select(func.count(Message.id)).where(Message.role == "user")) or 0
     completed = db.scalar(select(func.count(ChatRequest.id)).where(ChatRequest.state == "completed")) or 0
     failed = db.scalar(select(func.count(ChatRequest.id)).where(ChatRequest.state == "failed")) or 0
-    known_cost = sum(call.cost_usd or 0 for call in calls if call.cost_status == "known")
+    provider_calls = [call for call in calls if call.model != "local-retrieval"]
+    chat_calls = [call for call in provider_calls if call.purpose == "chat"]
+    embedding_calls = [call for call in provider_calls if call.purpose == "knowledge-embedding"]
+    priced = [(call, resolved_call_cost(call)) for call in provider_calls]
+    known_cost = sum(cost or 0 for _, cost in priced)
+    chat_cost = sum(resolved_call_cost(call) or 0 for call in chat_calls)
+    embedding_cost = sum(resolved_call_cost(call) or 0 for call in embedding_calls)
     return {
         "questions": questions,
         "successful_answers": completed,
-        "api_calls": len(calls),
+        "api_calls": len(provider_calls),
+        "local_operations": len(calls) - len(provider_calls),
         "errors": failed,
-        "input_tokens": sum(call.input_tokens or 0 for call in calls),
-        "output_tokens": sum(call.output_tokens or 0 for call in calls),
-        "cached_tokens": sum(call.cached_tokens or 0 for call in calls),
+        "input_tokens": sum(call.input_tokens or 0 for call in provider_calls),
+        "output_tokens": sum(call.output_tokens or 0 for call in provider_calls),
+        "cached_tokens": sum(call.cached_tokens or 0 for call in chat_calls),
+        "reasoning_tokens": sum(call.reasoning_tokens or 0 for call in chat_calls),
+        "chat_input_tokens": sum(call.input_tokens or 0 for call in chat_calls),
+        "chat_output_tokens": sum(call.output_tokens or 0 for call in chat_calls),
+        "embedding_input_tokens": sum(call.input_tokens or 0 for call in embedding_calls),
+        "chat_cost": f"{chat_cost:.6f}",
+        "embedding_cost": f"{embedding_cost:.6f}",
         "known_cost": f"{known_cost:.6f}",
         "currency": "USD",
-        "unknown_count": sum(1 for call in calls if call.cost_status == "unknown"),
+        "unknown_count": sum(1 for _, cost in priced if cost is None),
         "model": settings.openai_model,
         "demo": settings.demo_mode or not bool(settings.openai_api_key),
     }
@@ -620,12 +634,14 @@ def usage_daily(request: Request, db: Session = Depends(get_db)):
     calls = db.scalars(select(ApiCall).order_by(ApiCall.created_at)).all()
     grouped: dict[str, dict[str, Any]] = {}
     for call in calls:
+        if call.model == "local-retrieval":
+            continue
         day = call.created_at.date().isoformat()
         row = grouped.setdefault(day, {"date": day, "calls": 0, "input_tokens": 0, "output_tokens": 0, "cost": 0.0})
         row["calls"] += 1
         row["input_tokens"] += call.input_tokens or 0
         row["output_tokens"] += call.output_tokens or 0
-        row["cost"] += call.cost_usd or 0
+        row["cost"] += resolved_call_cost(call) or 0
     return {"items": [{**row, "cost": f"{row['cost']:.6f}"} for row in grouped.values()]}
 
 
