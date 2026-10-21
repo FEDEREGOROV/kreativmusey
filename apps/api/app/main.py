@@ -267,7 +267,20 @@ def process_chat_request(request_id: str) -> None:
             db.commit()
             return
         try:
-            result, sources, version_id = answer_question(db, request_id, user_message.text)
+            recent_messages = list(db.scalars(
+                select(Message)
+                .where(Message.conversation_id == chat_request.conversation_id)
+                .where(Message.id != user_message.id)
+                .order_by(Message.sequence.desc())
+                .limit(8)
+            ).all())
+            history = [(message.role, message.text) for message in reversed(recent_messages)]
+            result, sources, version_id = answer_question(
+                db,
+                request_id,
+                user_message.text,
+                history=history,
+            )
             assistant_message = Message(
                 conversation_id=chat_request.conversation_id,
                 request_id=chat_request.id,

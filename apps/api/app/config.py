@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{(API_DIR / 'creative_museum.db').as_posix()}"
     openai_api_key: str = ""
     openai_model: str = "gpt-6-luna"
+    openai_embedding_model: str = "text-embedding-3-small"
     openai_reasoning_effort: str = "low"
     openai_max_output_tokens: int = 1600
     chat_max_message_chars: int = 4000

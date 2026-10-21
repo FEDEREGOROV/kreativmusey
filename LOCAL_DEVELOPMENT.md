@@ -44,6 +44,7 @@ PATH="$PWD/../../.tools/node/bin:$PATH" npm --prefix ../web run build
 DEMO_MODE=false
 OPENAI_API_KEY=ваш_новый_ключ
 OPENAI_MODEL=gpt-6-luna
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ADMIN_PASSWORD=уникальный_пароль
 SESSION_SECRET=случайная_длинная_строка
 ACTIVE_CONTEST_SEASON=утвержденный_сезон

@@ -44,6 +44,37 @@ def test_session_chat_and_history(client: TestClient):
     assert len(history.json()["items"]) >= 2
 
 
+@pytest.mark.parametrize(
+    ("question", "expected_fragment", "expects_sources"),
+    [
+        ("Может ли подать заявку самозанятый?", "договору гпх", True),
+        ("Как ты работаешь?", "баз", False),
+    ],
+)
+def test_chat_answers_known_and_help_questions(
+    client: TestClient,
+    question: str,
+    expected_fragment: str,
+    expects_sources: bool,
+):
+    session = client.get("/api/v1/session")
+    conversation_id = session.json()["conversation_id"]
+    client_message_id = str(uuid.uuid4())
+    accepted = client.post(
+        f"/api/v1/conversations/{conversation_id}/messages",
+        headers={"Idempotency-Key": client_message_id},
+        json={"question": question, "text": question, "client_message_id": client_message_id},
+    )
+    status = client.get(f"/api/v1/chat-requests/{accepted.json()['request_id']}")
+
+    assert status.status_code == 200
+    assert status.json()["status"] == "completed"
+    assistant = status.json()["assistant_message"]
+    assert assistant["result_status"] == "answered"
+    assert expected_fragment in assistant["text"].casefold()
+    assert bool(assistant["sources"]) is expects_sources
+
+
 def test_admin_login_usage_and_faqs(client: TestClient):
     login = client.post(
         "/api/v1/admin/auth/login",
