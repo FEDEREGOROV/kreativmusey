@@ -121,6 +121,25 @@ def test_admin_login_usage_and_faqs(client: TestClient):
     assert created.status_code == 201
 
 
+def test_admin_conversations_excludes_empty_dialogs(client: TestClient):
+    session = client.get("/api/v1/session")
+    assert session.status_code == 200
+    empty_conversation = client.post("/api/v1/conversations")
+    assert empty_conversation.status_code == 201
+
+    login = client.post(
+        "/api/v1/admin/auth/login",
+        json={"username": "admin", "password": "konkursadmin"},
+    )
+    assert login.status_code == 200
+
+    conversations = client.get("/api/v1/admin/conversations")
+    assert conversations.status_code == 200
+    assert empty_conversation.json()["id"] not in {
+        item["id"] for item in conversations.json()["items"]
+    }
+
+
 def test_layered_knowledge_and_editable_escalation(client: TestClient):
     login = client.post(
         "/api/v1/admin/auth/login",

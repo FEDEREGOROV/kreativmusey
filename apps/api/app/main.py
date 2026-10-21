@@ -552,7 +552,13 @@ def admin_logout(request: Request, response: Response, db: Session = Depends(get
 @app.get("/api/v1/admin/conversations")
 def admin_conversations(request: Request, q: str = "", limit: int = 50, db: Session = Depends(get_db)):
     require_admin(request, db)
-    query = select(Conversation).order_by(Conversation.last_message_at.desc()).limit(min(max(limit, 1), 100))
+    has_messages = select(Message.id).where(Message.conversation_id == Conversation.id).exists()
+    query = (
+        select(Conversation)
+        .where(has_messages)
+        .order_by(Conversation.last_message_at.desc())
+        .limit(min(max(limit, 1), 100))
+    )
     conversations = db.scalars(query).all()
     items: list[dict[str, Any]] = []
     for conversation in conversations:
