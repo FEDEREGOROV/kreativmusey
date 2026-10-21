@@ -223,45 +223,22 @@ function FaqsTab() {
 }
 
 const newQaDraft = { title: '', content: '' }
+type QaDraft = typeof newQaDraft
 
-function QaSheetRow({ item, onSaved }: { item: KnowledgeItem; onSaved: (item: KnowledgeItem) => void }) {
-  const [question, setQuestion] = useState(item.title)
-  const [answer, setAnswer] = useState(item.content)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  const changed = question !== item.title || answer !== item.content
-
-  async function save() {
-    if (!question.trim() || !answer.trim() || saving) return
-    setSaving(true)
-    const result = await api<KnowledgeItem>(`/api/v1/admin/knowledge/${item.id}`, {
-      method: 'PATCH',
-      headers: csrfHeaders(),
-      body: JSON.stringify({ title: question, content: answer, layer: 'qa', section: item.section, season: item.season }),
-    })
-    onSaved(result)
-    setSaving(false)
-    setSaved(true)
-    window.setTimeout(() => setSaved(false), 1400)
-  }
-
-  async function toggleStatus() {
-    const action = item.status === 'hidden' ? 'activate' : 'hide'
-    const result = await api<KnowledgeItem>(`/api/v1/admin/knowledge/${item.id}/${action}`, { method: 'POST', headers: csrfHeaders() })
-    onSaved(result)
-  }
-
+function QaSheetRow({ item, draft, deleting, onChange, onDelete }: {
+  item: KnowledgeItem
+  draft: QaDraft
+  deleting: boolean
+  onChange: (draft: QaDraft) => void
+  onDelete: () => void
+}) {
   return (
-    <div className={`qa-sheet-row ${item.status === 'hidden' ? 'is-hidden' : ''}`}>
-      <textarea aria-label="Вопрос" rows={3} value={question} onChange={(event) => setQuestion(event.target.value)} />
+    <div className="qa-sheet-row">
+      <textarea aria-label="Вопрос" rows={3} value={draft.title} onChange={(event) => onChange({ ...draft, title: event.target.value })} />
       <div className="qa-answer-cell">
-        <textarea aria-label="Ответ" rows={5} value={answer} onChange={(event) => setAnswer(event.target.value)} />
+        <textarea aria-label="Ответ" rows={5} value={draft.content} onChange={(event) => onChange({ ...draft, content: event.target.value })} />
         <div className="qa-row-actions">
-          <span className={`status-pill status-pill--${item.status}`}>{item.status === 'hidden' ? 'скрыт' : 'активен'}</span>
-          {saved && <span className="inline-saved">Сохранено</span>}
-          <button type="button" className="text-button" disabled={!changed || saving} onClick={() => void save()}>{saving ? 'Сохраняю…' : 'Сохранить'}</button>
-          <button type="button" className="text-button text-button--muted" onClick={() => void toggleStatus()}>{item.status === 'hidden' ? 'Вернуть' : 'Скрыть'}</button>
+          <button type="button" className="text-button text-button--danger" disabled={deleting} onClick={onDelete} aria-label={`Удалить строку: ${item.title}`}>{deleting ? 'Удаляю…' : 'Удалить'}</button>
         </div>
       </div>
     </div>
@@ -275,12 +252,16 @@ function KnowledgeTab() {
   const [notice, setNotice] = useState('')
   const [newQa, setNewQa] = useState(newQaDraft)
   const [showNewQa, setShowNewQa] = useState(false)
+  const [qaDrafts, setQaDrafts] = useState<Record<string, QaDraft>>({})
+  const [savingQa, setSavingQa] = useState(false)
+  const [deletingQaId, setDeletingQaId] = useState('')
   const [escalation, setEscalation] = useState<EscalationSetting>({ value: '', revision: 0 })
   const [generalText, setGeneralText] = useState<EscalationSetting>({ value: '', revision: 0 })
 
   async function loadQa(search = query) {
     const data = await api<{ items: KnowledgeItem[]; count: number }>(`/api/v1/admin/knowledge?layer=qa&q=${encodeURIComponent(search)}`)
     setItems(data.items)
+    setQaDrafts(Object.fromEntries(data.items.map((item) => [item.id, { title: item.title, content: item.content }])))
   }
 
   async function loadEscalation() {
@@ -309,13 +290,68 @@ function KnowledgeTab() {
       body: JSON.stringify({ title: newQa.title, content: newQa.content, layer: 'qa', section: 'Вопросы и ответы', season: '2025-2026' }),
     })
     setItems((current) => [...current, result])
+    setQaDrafts((current) => ({ ...current, [result.id]: { title: result.title, content: result.content } }))
     setNewQa(newQaDraft)
     setShowNewQa(false)
     setNotice('Новая пара добавлена')
   }
 
-  function updateQa(updated: KnowledgeItem) {
-    setItems((current) => current.map((item) => item.id === updated.id ? updated : item))
+  const changedQaItems = items.filter((item) => {
+    const draft = qaDrafts[item.id]
+    return draft && (draft.title !== item.title || draft.content !== item.content)
+  })
+
+  async function saveQaChanges() {
+    if (!changedQaItems.length || savingQa) return
+    if (changedQaItems.some((item) => !qaDrafts[item.id].title.trim() || !qaDrafts[item.id].content.trim())) {
+      setNotice('Заполните вопрос и ответ во всех изменённых строках')
+      return
+    }
+    setSavingQa(true)
+    setNotice('')
+    try {
+      const savedItems: KnowledgeItem[] = []
+      for (const item of changedQaItems) {
+        const draft = qaDrafts[item.id]
+        savedItems.push(await api<KnowledgeItem>(`/api/v1/admin/knowledge/${item.id}`, {
+          method: 'PATCH',
+          headers: csrfHeaders(),
+          body: JSON.stringify({ title: draft.title, content: draft.content, layer: 'qa', section: item.section, season: item.season }),
+        }))
+      }
+      const savedById = new Map(savedItems.map((item) => [item.id, item]))
+      setItems((current) => current.map((item) => savedById.get(item.id) ?? item))
+      setQaDrafts((current) => {
+        const next = { ...current }
+        for (const item of savedItems) next[item.id] = { title: item.title, content: item.content }
+        return next
+      })
+      setNotice(`Сохранено строк: ${savedItems.length}`)
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'Не удалось сохранить изменения')
+    } finally {
+      setSavingQa(false)
+    }
+  }
+
+  async function deleteQa(item: KnowledgeItem) {
+    if (deletingQaId || !window.confirm(`Удалить строку «${item.title}»? Это действие нельзя отменить.`)) return
+    setDeletingQaId(item.id)
+    setNotice('')
+    try {
+      await api<{ deleted: boolean }>(`/api/v1/admin/knowledge/${item.id}`, { method: 'DELETE', headers: csrfHeaders() })
+      setItems((current) => current.filter((currentItem) => currentItem.id !== item.id))
+      setQaDrafts((current) => {
+        const next = { ...current }
+        delete next[item.id]
+        return next
+      })
+      setNotice('Строка удалена')
+    } catch (reason) {
+      setNotice(reason instanceof Error ? reason.message : 'Не удалось удалить строку')
+    } finally {
+      setDeletingQaId('')
+    }
   }
 
   async function saveGeneralText(event: FormEvent) {
@@ -363,9 +399,13 @@ function KnowledgeTab() {
             <div className="qa-sheet-head" role="row"><strong>Вопрос</strong><strong>Ответ</strong></div>
             {showNewQa && <form className="qa-sheet-row qa-sheet-row--new" onSubmit={(event) => void createQa(event)}>
               <textarea aria-label="Новый вопрос" rows={3} placeholder="Новый вопрос" value={newQa.title} onChange={(event) => setNewQa({ ...newQa, title: event.target.value })} required />
-              <div className="qa-answer-cell"><textarea aria-label="Новый ответ" rows={5} placeholder="Готовый ответ" value={newQa.content} onChange={(event) => setNewQa({ ...newQa, content: event.target.value })} required /><div className="qa-row-actions"><button className="primary-button" type="submit">Сохранить строку</button></div></div>
+              <div className="qa-answer-cell"><textarea aria-label="Новый ответ" rows={5} placeholder="Готовый ответ" value={newQa.content} onChange={(event) => setNewQa({ ...newQa, content: event.target.value })} required /><div className="qa-row-actions"><button className="primary-button" type="submit">Добавить</button></div></div>
             </form>}
-            {items.map((item) => <QaSheetRow item={item} key={item.id} onSaved={updateQa} />)}
+            {items.map((item) => <QaSheetRow item={item} draft={qaDrafts[item.id] ?? { title: item.title, content: item.content }} deleting={deletingQaId === item.id} key={item.id} onChange={(draft) => setQaDrafts((current) => ({ ...current, [item.id]: draft }))} onDelete={() => void deleteQa(item)} />)}
+          </div>
+          <div className="qa-bulk-actions">
+            <span className="muted">{changedQaItems.length ? `Изменено строк: ${changedQaItems.length}` : 'Все изменения сохранены'}</span>
+            <button className="primary-button" type="button" disabled={!changedQaItems.length || savingQa} onClick={() => void saveQaChanges()}>{savingQa ? 'Сохраняю…' : 'Сохранить изменения'}</button>
           </div>
         </>}
 

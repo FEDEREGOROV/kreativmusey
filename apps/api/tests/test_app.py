@@ -94,6 +94,25 @@ def test_layered_knowledge_and_editable_escalation(client: TestClient):
     assert len(general_text.json()["value"]) > 100
     assert "creativemuseum@futuretime.ru" in escalation.json()["value"]
 
+    created_qa = client.post(
+        "/api/v1/admin/knowledge",
+        headers={"X-CSRF-Token": csrf},
+        json={
+            "title": "Временный вопрос",
+            "content": "Временный ответ для проверки удаления.",
+            "layer": "qa",
+            "section": "Тест",
+            "season": "2025-2026",
+        },
+    )
+    assert created_qa.status_code == 201
+    deleted_qa = client.delete(
+        f"/api/v1/admin/knowledge/{created_qa.json()['id']}",
+        headers={"X-CSRF-Token": csrf},
+    )
+    assert deleted_qa.status_code == 200
+    assert deleted_qa.json()["deleted"] is True
+
     saved_general = client.put(
         "/api/v1/admin/knowledge/general-text",
         headers={"X-CSRF-Token": csrf},

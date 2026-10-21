@@ -442,9 +442,10 @@ h1 {
 .qa-answer-cell { min-width: 0; }
 .qa-row-actions { min-height: 44px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 6px 10px 9px; border-top: 1px solid #edf0ed; }
 .qa-sheet-row--new { background: #f7faf4; }
-.qa-sheet-row.is-hidden { background: #fafafa; opacity: .62; }
-.inline-saved { color: var(--primary); font-size: 12px; font-weight: 800; }
-.text-button--muted { color: var(--text-muted); }
+.text-button--danger { color: #a5342a; }
+.text-button--danger:hover { background: #fff2f0; }
+.qa-bulk-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding-top: 16px; }
+.qa-bulk-actions .primary-button:disabled { opacity: .45; cursor: default; }
 .general-text-editor { display: grid; gap: 14px; }
 .general-text-editor h3 { margin: 0; font-size: 22px; }
 .general-text-editor p { margin: 5px 0 0; }

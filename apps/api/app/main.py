@@ -800,6 +800,18 @@ def update_knowledge(item_id: str, body: KnowledgeBody, request: Request, db: Se
     return serialize_knowledge_item(item)
 
 
+@app.delete("/api/v1/admin/knowledge/{item_id}")
+def delete_knowledge(item_id: str, request: Request, db: Session = Depends(get_db)):
+    _, admin = require_admin(request, db, csrf=True)
+    item = db.get(KnowledgeChunk, item_id)
+    if not item:
+        raise HTTPException(404, {"code": "NOT_FOUND", "message": "Материал не найден"})
+    db.add(AuditEvent(admin_id=admin.id, action="knowledge.delete", entity_type="knowledge", entity_id=item.id))
+    db.delete(item)
+    db.commit()
+    return {"deleted": True, "id": item_id}
+
+
 @app.post("/api/v1/admin/knowledge/{item_id}/{action}")
 def change_knowledge_status(
     item_id: str,
