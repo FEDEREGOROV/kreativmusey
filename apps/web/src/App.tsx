@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Admin } from './Admin'
 import { ApiError, api, csrfHeaders } from './api'
 import type { ChatMessage, FAQItem, PublicConfig } from './api'
+import { RichText } from './RichText'
 import './App.css'
 
 type MascotState = 'idle' | 'thinking' | 'answered' | 'clarification' | 'no_answer' | 'error'
@@ -244,8 +245,8 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
               <div className={`message-row message-row--${message.role}`} key={message.id}>
                 {message.role === 'assistant' && <span className="mini-mascot" aria-hidden="true"><img src={mascotSrc} alt="" /></span>}
                 <div className={`message message--${message.role}`}>
-                  <p>{message.role === 'assistant' ? message.text.replace(legacySeasonNotice, '') : message.text}</p>
-                  {message.sources.length > 0 && <details className="sources"><summary>Источники</summary>{message.sources.map((source) => <div key={source.id}><strong>{source.title}</strong><span>{source.section}</span></div>)}</details>}
+                  <p><RichText text={message.role === 'assistant' ? message.text.replace(legacySeasonNotice, '') : message.text} /></p>
+                  {message.sources.length > 0 && <details className="sources"><summary>Источники</summary>{message.sources.map((source) => <div key={source.id}><strong>{source.url ? <a className="rich-link" href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a> : <RichText text={source.title} />}</strong><span>{source.section}</span></div>)}</details>}
                   {message.role === 'assistant' && <div className="feedback-actions" aria-label="Оценка ответа"><button className={message.feedback === 'helpful' ? 'active' : ''} type="button" onClick={() => void feedback(message.id, 'helpful')} aria-label="Ответ полезен"><FeedbackIcon direction="up" /></button><button className={message.feedback === 'unhelpful' ? 'active' : ''} type="button" onClick={() => void feedback(message.id, 'unhelpful')} aria-label="Ответ не помог"><FeedbackIcon direction="down" /></button></div>}
                 </div>
               </div>
@@ -260,7 +261,7 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
           </form>
         </section>
 
-        <section className="faq-section" aria-labelledby="faq-title"><h2 id="faq-title">Частые вопросы</h2><div className="faq-list">{faqs.map((faq) => { const isOpen = openFaq === faq.id; return <div className="faq-item" key={faq.id}><button type="button" aria-expanded={isOpen} aria-controls={`faq-${faq.id}`} onClick={() => setOpenFaq(isOpen ? null : faq.id)}><span>{faq.question}</span><span className="chevron" aria-hidden="true">⌄</span></button>{isOpen && <p id={`faq-${faq.id}`}>{faq.answer}</p>}</div> })}</div></section>
+        <section className="faq-section" aria-labelledby="faq-title"><h2 id="faq-title">Частые вопросы</h2><div className="faq-list">{faqs.map((faq) => { const isOpen = openFaq === faq.id; return <div className="faq-item" key={faq.id}><button type="button" aria-expanded={isOpen} aria-controls={`faq-${faq.id}`} onClick={() => setOpenFaq(isOpen ? null : faq.id)}><span>{faq.question}</span><span className="chevron" aria-hidden="true">⌄</span></button>{isOpen && <p id={`faq-${faq.id}`}><RichText text={faq.answer} /></p>}</div> })}</div></section>
       </main>
       {config && <footer className="site-footer"><a href={`mailto:${config.support_email}`}>{config.support_email}</a><a href={`tel:${config.support_phone.replace(/[^+\d]/g, '')}`}>{config.support_phone}</a></footer>}
       {showLogin && <LoginDialog onClose={() => setShowLogin(false)} onSuccess={(username) => { setShowLogin(false); onAdmin(username) }} />}

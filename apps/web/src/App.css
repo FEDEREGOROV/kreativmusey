@@ -201,6 +201,9 @@ h1 {
 .message-row--user { justify-content: flex-end; }
 .message { max-width: min(74%, 620px); margin: 0; padding: 12px 15px; border-radius: 17px; color: var(--text); font-size: 15px; line-height: 1.48; white-space: pre-wrap; overflow-wrap: anywhere; }
 .message p { margin: 0; }
+.rich-link { color: var(--primary); font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.rich-link:hover { color: var(--primary-hover); text-decoration-thickness: 2px; }
+.rich-link:focus-visible { border-radius: 3px; outline: 2px solid var(--focus); outline-offset: 2px; }
 .message--user { border-bottom-right-radius: 7px; background: var(--user-bubble); }
 .message--assistant { border-bottom-left-radius: 7px; background: var(--assistant-bubble); }
 .mini-mascot {

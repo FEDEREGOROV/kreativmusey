@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api, csrfHeaders } from './api'
 import type { ChatMessage, ConversationSummary, EscalationSetting, FAQItem, KnowledgeItem } from './api'
+import { RichText } from './RichText'
 
 type AdminTab = 'dialogs' | 'usage' | 'knowledge' | 'faqs'
 
@@ -107,7 +108,7 @@ function DialogsTab() {
             {selected.messages.map((message) => (
               <article key={message.id} className={`detail-message detail-message--${message.role}`}>
                 <span>{message.role === 'user' ? 'Посетитель' : 'Помощник'} · {dateTime(message.created_at)}</span>
-                <p>{message.text}</p>
+                <p><RichText text={message.text} /></p>
                 {message.sources.length > 0 && <small>Источники: {message.sources.map((source) => source.title).join(', ')}</small>}
               </article>
             ))}
