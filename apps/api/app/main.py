@@ -337,7 +337,7 @@ def public_config():
 
 
 @app.get("/api/v1/session")
-def session_endpoint(request: Request, response: Response, db: Session = Depends(get_db)):
+def session_endpoint(request: Request, response: Response, embed: bool = False, db: Session = Depends(get_db)):
     visitor, created_token = get_or_create_visitor(db, request.cookies.get(VISITOR_COOKIE))
     if created_token:
         response.set_cookie(
@@ -345,9 +345,13 @@ def session_endpoint(request: Request, response: Response, db: Session = Depends
             created_token,
             httponly=True,
             secure=settings.cookie_secure,
-            samesite="lax",
+            samesite="none" if embed else "lax",
             max_age=365 * 24 * 60 * 60,
         )
+        if embed and settings.cookie_secure:
+            name, value = response.raw_headers[-1]
+            if name.lower() == b"set-cookie" and b"Partitioned" not in value:
+                response.raw_headers[-1] = (name, value + b"; Partitioned")
     conversation = db.scalar(
         select(Conversation)
         .where(Conversation.visitor_session_id == visitor.id)

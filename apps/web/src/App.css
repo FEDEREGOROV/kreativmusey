@@ -4,6 +4,34 @@
   padding: 0 32px 64px;
 }
 
+.page-shell--embed {
+  width: 100%;
+  min-height: 100dvh;
+  padding: 12px;
+}
+
+.page-shell--embed .public-main {
+  width: 100%;
+  height: calc(100dvh - 24px);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-shell--embed .hero-section {
+  min-height: 104px;
+  flex: 0 0 104px;
+  gap: 16px;
+  padding: 0 8px 8px;
+}
+
+.page-shell--embed .hero-section h1 { font-size: clamp(26px, 4vw, 36px); }
+.page-shell--embed .subtitle { margin-top: 5px; font-size: 15px; line-height: 21px; }
+.page-shell--embed .mascot { flex-basis: 100px; width: 100px; height: 86px; margin-left: auto; }
+.page-shell--embed .mascot__signal { display: none; }
+.page-shell--embed .chat-card { width: 100%; height: auto; min-height: 360px; flex: 1; }
+.embed-new-chat { flex: 0 0 auto; white-space: nowrap; }
+
 .site-header {
   height: 80px;
   display: flex;
@@ -510,6 +538,14 @@ textarea:focus-visible {
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .field-row { grid-template-columns: 1fr; }
   .export-menu { display: none; }
+  .page-shell--embed { padding: 8px; }
+  .page-shell--embed .public-main { height: calc(100dvh - 16px); margin: 0; }
+  .page-shell--embed .hero-section { min-height: 82px; flex-basis: 82px; padding: 0 2px 6px; }
+  .page-shell--embed .hero-section h1 { max-width: none; font-size: 24px; line-height: 28px; }
+  .page-shell--embed .subtitle { display: none; }
+  .page-shell--embed .mascot { flex-basis: 66px; width: 66px; height: 62px; }
+  .page-shell--embed .embed-new-chat { display: block; min-height: 34px; padding: 6px 10px; font-size: 12px; }
+  .page-shell--embed .chat-card { height: auto; min-height: 320px; }
 }
 
 @media (max-width: 390px) {

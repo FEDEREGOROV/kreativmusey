@@ -25,6 +25,14 @@ def test_health_and_public_config(client: TestClient):
     assert config.json()["demo"] is True
 
 
+def test_embedded_session_uses_cross_site_cookie(client: TestClient):
+    client.cookies.clear()
+    response = client.get("/api/v1/session?embed=1")
+
+    assert response.status_code == 200
+    assert "samesite=none" in response.headers["set-cookie"].casefold()
+
+
 def test_openai_token_pricing():
     assert calculate_token_cost("gpt-6-luna", 1_000_000, 1_000_000, 100_000) == pytest.approx(0.591)
     assert calculate_token_cost("text-embedding-3-small", 1_000_000) == pytest.approx(0.02)

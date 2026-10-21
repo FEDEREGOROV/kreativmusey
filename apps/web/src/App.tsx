@@ -90,6 +90,7 @@ function LoginDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 }
 
 function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => void; adminUsername: string | null }) {
+  const embedded = window.location.pathname === '/embed' || new URLSearchParams(window.location.search).get('embed') === '1'
   const [config, setConfig] = useState<PublicConfig | null>(null)
   const [faqs, setFaqs] = useState<FAQItem[]>([])
   const [conversationId, setConversationId] = useState('')
@@ -115,7 +116,7 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
       try {
         const [publicConfig, session, faqData] = await Promise.all([
           api<PublicConfig>('/api/v1/public/config'),
-          api<{ conversation_id: string }>('/api/v1/session'),
+          api<{ conversation_id: string }>(embedded ? '/api/v1/session?embed=1' : '/api/v1/session'),
           api<{ items: FAQItem[] }>('/api/v1/faqs'),
         ])
         setConfig(publicConfig)
@@ -218,8 +219,8 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
   }
 
   return (
-    <div className="page-shell">
-      <header className="site-header">
+    <div className={`page-shell${embedded ? ' page-shell--embed' : ''}`}>
+      {!embedded && <header className="site-header">
         <a className="brand" href="#top">Креативный музей</a>
         <div className="header-actions">
           {messages.length > 0 && <button className="new-chat-button" type="button" onClick={() => void newConversation()}>Новый диалог</button>}
@@ -227,12 +228,13 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2" /><path d="M5.8 19c.7-3.1 3-4.7 6.2-4.7s5.5 1.6 6.2 4.7" /></svg>
           </button>
         </div>
-      </header>
+      </header>}
 
       <main id="top" className="public-main">
         <section className="hero-section" aria-labelledby="hero-title">
           <div><h1 id="hero-title">Помощник конкурса</h1><p className="subtitle">Ответы на вопросы об участии и заявке</p></div>
           <Mascot state={mascotState} />
+          {embedded && messages.length > 0 && <button className="new-chat-button embed-new-chat" type="button" onClick={() => void newConversation()}>Новый диалог</button>}
         </section>
 
         <section className="chat-card" aria-label="Чат с помощником">
@@ -261,9 +263,9 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
           </form>
         </section>
 
-        <section className="faq-section" aria-labelledby="faq-title"><h2 id="faq-title">Частые вопросы</h2><div className="faq-list">{faqs.map((faq) => { const isOpen = openFaq === faq.id; return <div className="faq-item" key={faq.id}><button type="button" aria-expanded={isOpen} aria-controls={`faq-${faq.id}`} onClick={() => setOpenFaq(isOpen ? null : faq.id)}><span>{faq.question}</span><span className="chevron" aria-hidden="true">⌄</span></button>{isOpen && <p id={`faq-${faq.id}`}><RichText text={faq.answer} /></p>}</div> })}</div></section>
+        {!embedded && <section className="faq-section" aria-labelledby="faq-title"><h2 id="faq-title">Частые вопросы</h2><div className="faq-list">{faqs.map((faq) => { const isOpen = openFaq === faq.id; return <div className="faq-item" key={faq.id}><button type="button" aria-expanded={isOpen} aria-controls={`faq-${faq.id}`} onClick={() => setOpenFaq(isOpen ? null : faq.id)}><span>{faq.question}</span><span className="chevron" aria-hidden="true">⌄</span></button>{isOpen && <p id={`faq-${faq.id}`}><RichText text={faq.answer} /></p>}</div> })}</div></section>}
       </main>
-      {config && <footer className="site-footer"><a href={`mailto:${config.support_email}`}>{config.support_email}</a><a href={`tel:${config.support_phone.replace(/[^+\d]/g, '')}`}>{config.support_phone}</a></footer>}
+      {!embedded && config && <footer className="site-footer"><a href={`mailto:${config.support_email}`}>{config.support_email}</a><a href={`tel:${config.support_phone.replace(/[^+\d]/g, '')}`}>{config.support_phone}</a></footer>}
       {showLogin && <LoginDialog onClose={() => setShowLogin(false)} onSuccess={(username) => { setShowLogin(false); onAdmin(username) }} />}
     </div>
   )
