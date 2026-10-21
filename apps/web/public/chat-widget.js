@@ -192,7 +192,7 @@
       </header>
       <iframe
         class="cm-widget__frame"
-        src="${widgetOrigin}/embed"
+        src="${widgetOrigin}/embed?widget=1"
         title="Помощник конкурса «Креативный музей»"
         loading="lazy"
         allow="clipboard-write"

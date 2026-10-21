@@ -32,6 +32,20 @@
 .page-shell--embed .chat-card { width: 100%; height: auto; min-height: 360px; flex: 1; }
 .embed-new-chat { flex: 0 0 auto; white-space: nowrap; }
 
+.page-shell--widget {
+  padding: 0;
+}
+
+.page-shell--widget .public-main {
+  height: 100dvh;
+}
+
+.page-shell--widget .chat-card {
+  min-height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+
 .site-header {
   height: 80px;
   display: flex;
@@ -546,6 +560,9 @@ textarea:focus-visible {
   .page-shell--embed .mascot { flex-basis: 66px; width: 66px; height: 62px; }
   .page-shell--embed .embed-new-chat { display: block; min-height: 34px; padding: 6px 10px; font-size: 12px; }
   .page-shell--embed .chat-card { height: auto; min-height: 320px; }
+  .page-shell--widget { padding: 0; }
+  .page-shell--widget .public-main { height: 100dvh; }
+  .page-shell--widget .chat-card { min-height: 100dvh; }
 }
 
 @media (max-width: 390px) {

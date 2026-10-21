@@ -90,7 +90,9 @@ function LoginDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 }
 
 function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => void; adminUsername: string | null }) {
-  const embedded = window.location.pathname === '/embed' || new URLSearchParams(window.location.search).get('embed') === '1'
+  const searchParams = new URLSearchParams(window.location.search)
+  const embedded = window.location.pathname === '/embed' || searchParams.get('embed') === '1'
+  const widgetMode = embedded && searchParams.get('widget') === '1'
   const [config, setConfig] = useState<PublicConfig | null>(null)
   const [faqs, setFaqs] = useState<FAQItem[]>([])
   const [conversationId, setConversationId] = useState('')
@@ -219,7 +221,7 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
   }
 
   return (
-    <div className={`page-shell${embedded ? ' page-shell--embed' : ''}`}>
+    <div className={`page-shell${embedded ? ' page-shell--embed' : ''}${widgetMode ? ' page-shell--widget' : ''}`}>
       {!embedded && <header className="site-header">
         <a className="brand" href="#top">Креативный музей</a>
         <div className="header-actions">
@@ -231,11 +233,11 @@ function PublicApp({ onAdmin, adminUsername }: { onAdmin: (username: string) => 
       </header>}
 
       <main id="top" className="public-main">
-        <section className="hero-section" aria-labelledby="hero-title">
+        {!widgetMode && <section className="hero-section" aria-labelledby="hero-title">
           <div><h1 id="hero-title">Помощник конкурса</h1><p className="subtitle">Ответы на вопросы об участии и заявке</p></div>
           <Mascot state={mascotState} />
           {embedded && messages.length > 0 && <button className="new-chat-button embed-new-chat" type="button" onClick={() => void newConversation()}>Новый диалог</button>}
-        </section>
+        </section>}
 
         <section className="chat-card" aria-label="Чат с помощником">
           <div ref={messageListRef} className="message-list" aria-live="polite">
